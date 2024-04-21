@@ -9,7 +9,7 @@
 ## 依存ライブラリ
 以下のライブラリに依存している：
 - ホスト環境C言語標準ライブラリ
-- 自作の行列計算ライブラリ `FlexirtaM`
+- 自作の行列計算ライブラリ [`FlexirtaM`](https://github.com/kntt32/FlexirtaM)
 
 ## 使い方
 ビルドは`make buildlib`で行う
