@@ -1,22 +1,22 @@
-build: main.o neuralnet.o FlexirtaM.so
-	gcc $^ -lm -Wall -Wextra -O2
+build: main.o neuralnet.o
+	gcc $^ -lFlexirtaM -lm -Wall -Wextra -O2
 
-install: FlexirtaM.so
+install: libFlexirtaM.so
 ifeq ($(OS), Windows_NT)
 else
 	cp $^ /usr/lib
 endif
 
-buildlib: FullarueN.so	
+buildlib: libFullarueN.so
 
-debug: main.c neuralnet.c FlexirtaM.so
-	gcc -g $^ -lm -O2
+debug: main.c neuralnet.c
+	gcc -g $^ -lFlexirtaM -lm -O2
 
 main.o: main.c FullarueN_Build.h
 neuralnet.o: neuralnet.c FullarueN_Build.h
 
-FullarueN.so: neuralnet.o FlexirtaM.so
-	gcc -o FullarueN.so -shared -fPIC $^
+libFullarueN.so: neuralnet.o
+	gcc -o libFullarueN.so -lFlexirtaM -shared -fPIC $^
 
 %.o: %.c
 	gcc -I include -c -Wall -Wextra $<
