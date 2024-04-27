@@ -1,7 +1,7 @@
 build: main.o neuralnet.o
 	gcc  $^ libFlexirtaM.so -lm -Wall -Wextra -O2
 
-install: libFlexirtaM.so
+install: libFullarueN.so
 ifeq ($(OS), Windows_NT)
 else
 	cp $^ /usr/lib
