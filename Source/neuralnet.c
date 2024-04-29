@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
+#include <time.h>
 
 #include <FlexirtaM_Build.h>
 #include "FullarueN_Build.h"
@@ -8,7 +10,7 @@
 #define DEBUG_TOOLARGE(t, n) if(10000 < t || t < -10000) {printf("\nERRIN:%d:%f", __LINE__, n);exit(1);}
 
 static unsigned long long NeuralNet_RandInt();
-
+static unsigned int* NeuralNet_Shuffle(unsigned int* buff, const unsigned size);
 
 typedef struct {
     unsigned int neuronNumber;//ニューロン個数
@@ -121,6 +123,8 @@ NeuralNet* NeuralNet_Set_LearningTarget(NeuralNet* this, const unsigned int coun
     if(this == NULL || inputs == NULL || target == NULL) return NULL;
 
     this->learningTarget.count = count;
+
+    this->batchSize = count;
 
     this->learningTarget.inputs = malloc(sizeof(NEURALNET_BASE_NUMBER_TYPE)*count*this->inputSize);
     for(unsigned int i=0; i<count*this->inputSize; i++) {
@@ -364,6 +368,42 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
 
     static const NEURALNET_BASE_NUMBER_TYPE eta2 = 0;
 
+    unsigned int* learningOrder = malloc(sizeof(unsigned int) * this->batchSize);
+
+    for(unsigned int epochTime = 0; epochTime < times; epochTime++) {
+        NeuralNet_Shuffle(learningOrder, this->batchSize);
+        for(unsigned int timesInEpoch = 0; timesInEpoch < (this->learningTarget.count + this->batchSize)/this->batchSize; timesInEpoch++) {
+            //勾配を計算
+            NeuralNet_Reset_Gradiant(this);
+            for(unsigned int i=0; (timesInEpoch != ((this->learningTarget.count + this->batchSize)/this->batchSize)-1)?(i < this->batchSize):(i < this->learningTarget.count % this->batchSize); i++) {
+                NeuralNet_Set_Delta(this, learningOrder[i+timesInEpoch*this->batchSize]);
+                NeuralNet_Set_Gradiant(this);
+            }
+
+            //重みを更新
+            {const unsigned int targetLayerIndex = 0;
+                for(unsigned int i=0; i<this->neuralNet[targetLayerIndex].neuronNumber*this->inputSize; i++) {
+                    this->neuralNet[targetLayerIndex].weight.data[i] -= eta*(this->neuralNet[targetLayerIndex].gradiantOfWeight[i] + eta2*this->neuralNet[targetLayerIndex].weight.data[i]);
+                }
+            }
+            for(unsigned int targetLayerIndex = 1; targetLayerIndex < this->layerNumber; targetLayerIndex++) {
+                for(unsigned int i=0; i<this->neuralNet[targetLayerIndex].neuronNumber*this->neuralNet[targetLayerIndex-1].neuronNumber; i++) {
+                    this->neuralNet[targetLayerIndex].weight.data[i] -= eta*(this->neuralNet[targetLayerIndex].gradiantOfWeight[i] + eta2*this->neuralNet[targetLayerIndex].weight.data[i]);
+                }
+            }
+
+            //バイアスを更新
+            for(unsigned int targetLayerIndex = 0; targetLayerIndex < this->layerNumber; targetLayerIndex++) {
+                for(unsigned int i=0; i<this->neuralNet[targetLayerIndex].neuronNumber; i++) {
+                    this->neuralNet[targetLayerIndex].bias.data[i] -= eta*(this->neuralNet[targetLayerIndex].gradiantOfBias[i] + eta2*this->neuralNet[targetLayerIndex].bias.data[i]);
+                }
+            }
+        }
+    }
+
+    free(learningOrder);
+    learningOrder = NULL;
+/*
     if(this->batchSize == 0) {
         for(unsigned int learningTimes=0; learningTimes<times; learningTimes++) {
             //勾配を計算
@@ -393,36 +433,9 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
             }
         }
     }else {
-        printf("AAAAA");
-        for(unsigned int learningTimes=0; learningTimes<times; learningTimes++) {
-            //勾配を計算
-            NeuralNet_Reset_Gradiant(this);
-            for(unsigned int i=0; i<this->batchSize; i++) {
-                NeuralNet_Set_Delta(this, NeuralNet_RandInt()%this->batchSize);//coding now...
-                NeuralNet_Set_Gradiant(this);
-            }
 
-            //重み変更
-            {const unsigned int i=0;
-                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->inputSize; k++) {
-                    this->neuralNet[i].weight.data[k] -= eta * this->neuralNet[i].gradiantOfWeight[k];
-                }
-            }
-            for(unsigned int i=1; i<this->layerNumber; i++) {
-                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->neuralNet[i-1].neuronNumber; k++) {
-                    this->neuralNet[i].weight.data[k] -= eta * this->neuralNet[i].gradiantOfWeight[k];
-                }
-            }
-
-            //バイアス変更
-            for(unsigned int i=0; i<this->layerNumber; i++) {
-                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber; k++) {
-                    this->neuralNet[i].bias.data[k] -= eta * this->neuralNet[i].gradiantOfBias[k];
-                }
-            }
-        }
     }
-
+*/
     return this;
 }
 
@@ -441,7 +454,38 @@ static unsigned long long NeuralNet_RandInt() {
     asm("rdrand %0" : "=r"(result));
     return result;
 #else
+    static unsigned int inited = 0;
+    if(!inited) srand((unsigned int)time(NULL));
     return rand();
 #endif
+}
+
+static unsigned int* NeuralNet_Shuffle(unsigned int* buff, const unsigned size) {
+    if(buff == NULL || size == 0) return NULL;
+    bool* stateFlag = malloc(sizeof(bool)*size);
+    for(unsigned int i=0; i<size; i++) stateFlag[i] = 1;
+
+    unsigned int selectedIndexByOnflag = 0;
+    unsigned int selectedIndexByAll = 0;
+
+    for(unsigned int i=size; 0<i; i--) {
+        selectedIndexByOnflag = 1+NeuralNet_RandInt()%(i);
+        
+        for(unsigned int k=0; k<size; k++) {
+            if(stateFlag[k]) {
+                selectedIndexByOnflag--;
+            }
+            if(selectedIndexByOnflag == 0) {
+                selectedIndexByAll = k;
+                break;
+            }
+            
+        }
+        stateFlag[selectedIndexByAll] = 0;
+        buff[i-1] = selectedIndexByAll;
+    }
+
+    free(stateFlag);
+    return buff;
 }
 

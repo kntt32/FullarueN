@@ -72,7 +72,6 @@ int main() {
     NeuralNet* nnet = NeuralNet_New(5, 2, neuronNumber);
 
     NeuralNet_Set_LearningTarget(nnet, datacount, learningInputs, learningTarget);
-    NeuralNet_Set_BatchSize(nnet, 0);
     NeuralNet_Learn(nnet, 1000, 0.01);
 
     for(unsigned int i=0; i<datacount; i++) {
