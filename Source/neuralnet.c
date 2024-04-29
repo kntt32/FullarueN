@@ -5,7 +5,9 @@
 #include <FlexirtaM_Build.h>
 #include "FullarueN_Build.h"
 
-#define DEBUG_TOOLARGE(t, n) if(10000 < t || t < -10000) {printf("\nERRIN:%d:%d", __LINE__, n);exit(1);}
+#define DEBUG_TOOLARGE(t, n) if(10000 < t || t < -10000) {printf("\nERRIN:%d:%f", __LINE__, n);exit(1);}
+
+static unsigned long long NeuralNet_RandInt();
 
 
 typedef struct {
@@ -26,11 +28,12 @@ struct {
 } Dummy_learningTarget;
 
 
-
 NeuralNet* NeuralNet_Constructer(NeuralNet* this, const unsigned int inputSize, const unsigned int layerNum, const unsigned int neuronNumbers[layerNum]) {
     if(this == NULL || neuronNumbers == NULL) return NULL;
 
     this->layerNumber = layerNum;
+
+    this->batchSize = 0;
 
     this->inputSize = inputSize;
 
@@ -45,10 +48,10 @@ NeuralNet* NeuralNet_Constructer(NeuralNet* this, const unsigned int inputSize, 
         this->neuralNet[i].neuronNumber = neuronNumbers[i];
         
         Matrix_Method(Constructer)(&(this->neuralNet[i].weight), 0, 0);
-        Matrix_Method(SignedRandom)(&(this->neuralNet[i].weight), neuronNumbers[i], (i != 0)?(neuronNumbers[i-1]):(inputSize));
+        Matrix_Method(SignedRandom_Wide)(&(this->neuralNet[i].weight), neuronNumbers[i], (i != 0)?(neuronNumbers[i-1]):(inputSize), 10);
         
         Matrix_Method(Constructer)(&(this->neuralNet[i].bias), 0, 0);
-        Matrix_Method(SignedRandom)(&(this->neuralNet[i].bias), neuronNumbers[i], 1);
+        Matrix_Method(SignedRandom_Wide)(&(this->neuralNet[i].bias), neuronNumbers[i], 1, 10);
 
         Matrix_Method(Constructer)(&(this->neuralNet[i].u), neuronNumbers[i], 1);
         Matrix_Method(Constructer)(&(this->neuralNet[i].y), neuronNumbers[i], 1);
@@ -359,32 +362,86 @@ NeuralNet* NeuralNet_Set_Gradiant(NeuralNet* this) {
 NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEURALNET_BASE_NUMBER_TYPE eta) {
     if(this == NULL) return NULL;
 
-    for(unsigned int learningTimes=0; learningTimes<times; learningTimes++) {
-        //勾配を計算
-        NeuralNet_Reset_Gradiant(this);
-        for(unsigned int i=0; i<this->learningTarget.count; i++) {
-            NeuralNet_Set_Delta(this, i);
-            NeuralNet_Set_Gradiant(this);
-        }
+    static const NEURALNET_BASE_NUMBER_TYPE eta2 = 0;
 
-        //重みを変更
-        {const unsigned int i=0;
-            for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->inputSize; k++) {
-                this->neuralNet[i].weight.data[k] -= eta * this->neuralNet[i].gradiantOfWeight[k];
+    if(this->batchSize == 0) {
+        for(unsigned int learningTimes=0; learningTimes<times; learningTimes++) {
+            //勾配を計算
+            NeuralNet_Reset_Gradiant(this);
+            for(unsigned int i=0; i<this->learningTarget.count; i++) {
+                NeuralNet_Set_Delta(this, i);
+                NeuralNet_Set_Gradiant(this);
+            }
+
+            //重みを変更
+            {const unsigned int i=0;
+                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->inputSize; k++) {
+                    this->neuralNet[i].weight.data[k] -= eta * (this->neuralNet[i].gradiantOfWeight[k] + eta2*this->neuralNet[i].weight.data[k]);
+                }
+            }
+
+            for(unsigned int i=1; i<this->layerNumber; i++) {
+                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->neuralNet[i-1].neuronNumber; k++) {
+                    this->neuralNet[i].weight.data[k] -= eta * (this->neuralNet[i].gradiantOfWeight[k] + eta2*this->neuralNet[i].weight.data[k]);
+                }
+            }
+            //バイアスを変更
+            for(unsigned int i=0; i<this->layerNumber; i++) {
+                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber; k++) {
+                    this->neuralNet[i].bias.data[k] -= eta * (this->neuralNet[i].gradiantOfBias[k] + eta2*this->neuralNet[i].bias.data[k]);
+                }
             }
         }
-        for(unsigned int i=1; i<this->layerNumber; i++) {
-            for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->neuralNet[i-1].neuronNumber; k++) {
-                this->neuralNet[i].weight.data[k] -= eta * this->neuralNet[i].gradiantOfWeight[k];
+    }else {
+        printf("AAAAA");
+        for(unsigned int learningTimes=0; learningTimes<times; learningTimes++) {
+            //勾配を計算
+            NeuralNet_Reset_Gradiant(this);
+            for(unsigned int i=0; i<this->batchSize; i++) {
+                NeuralNet_Set_Delta(this, NeuralNet_RandInt()%this->batchSize);//coding now...
+                NeuralNet_Set_Gradiant(this);
             }
-        }
-        //バイアスを変更
-        for(unsigned int i=0; i<this->layerNumber; i++) {
-            for(unsigned int k=0; k<this->neuralNet[i].neuronNumber; k++) {
-                this->neuralNet[i].bias.data[k] -= eta * this->neuralNet[i].gradiantOfBias[k];
+
+            //重み変更
+            {const unsigned int i=0;
+                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->inputSize; k++) {
+                    this->neuralNet[i].weight.data[k] -= eta * this->neuralNet[i].gradiantOfWeight[k];
+                }
+            }
+            for(unsigned int i=1; i<this->layerNumber; i++) {
+                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->neuralNet[i-1].neuronNumber; k++) {
+                    this->neuralNet[i].weight.data[k] -= eta * this->neuralNet[i].gradiantOfWeight[k];
+                }
+            }
+
+            //バイアス変更
+            for(unsigned int i=0; i<this->layerNumber; i++) {
+                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber; k++) {
+                    this->neuralNet[i].bias.data[k] -= eta * this->neuralNet[i].gradiantOfBias[k];
+                }
             }
         }
     }
 
     return this;
 }
+
+NeuralNet* NeuralNet_Set_BatchSize(NeuralNet* this, const unsigned int size) {
+    if(this == NULL) return NULL;
+
+    this->batchSize = size;
+
+    return this;
+}
+
+
+static unsigned long long NeuralNet_RandInt() {
+#if NEURALNET_ENABLE_RDRAND
+    unsigned long long result = 0;
+    asm("rdrand %0" : "=r"(result));
+    return result;
+#else
+    return rand();
+#endif
+}
+

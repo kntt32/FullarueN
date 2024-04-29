@@ -25,7 +25,9 @@ Matrix_Struct* Matrix_Method(Ones)(Matrix_Struct* this, const unsigned int width
 Matrix_Struct* Matrix_Method(Fill)(Matrix_Struct* this, const unsigned int width, const unsigned int height, const Matrix_BaseNumber number);//行列をnumberだけにする
 Matrix_Struct* Matrix_Method(Eye)(Matrix_Struct* this, const unsigned int size);//単位行列にする
 Matrix_Struct* Matrix_Method(Random)(Matrix_Struct* this, const unsigned int width, const unsigned int height);//0以上1以下でランダムにする
+Matrix_Struct* Matrix_Method(Random_Wide)(Matrix_Struct* this, const unsigned int width, const unsigned int height, const Matrix_BaseNumber multnum);//0以上multnum以下でランダム
 Matrix_Struct* Matrix_Method(SignedRandom)(Matrix_Struct* this, const unsigned int width, const unsigned int height);//-1以上1以下でランダムにする
+Matrix_Struct* Matrix_Method(SignedRandom_Wide)(Matrix_Struct* this, const unsigned int width, const unsigned int height, const Matrix_BaseNumber multnum);//-multnum以上multnum以下でランダム
 Matrix_Struct* Matrix_Method(Arrange)(Matrix_Struct* this, const unsigned int width, const unsigned int height, const Matrix_BaseNumber start, const Matrix_BaseNumber increase);//連続した数値を入れる
 void Matrix_Method(Print)(const Matrix_Struct* this);//表示
 char* Matrix_Method(OutStr)(const Matrix_Struct* this, char* buff, unsigned int* buffsize);//文字列出力

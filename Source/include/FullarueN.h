@@ -9,6 +9,8 @@
 typedef struct {
     unsigned int layerNumber;//レイヤー数
 
+    unsigned int batchSize;//バッチサイズ
+
     unsigned int inputSize;//入力サイズ
     Matrix_Struct input;//[w:inputSize h:1] 入力
     unsigned int outputSize;//出力サイズ
@@ -52,3 +54,5 @@ NeuralNet* NeuralNet_Set_Delta(NeuralNet* this, const unsigned int learningIndex
 NeuralNet* NeuralNet_Reset_Gradiant(NeuralNet* this);//勾配をリセット
 NeuralNet* NeuralNet_Set_Gradiant(NeuralNet* this);//勾配を加算
 NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEURALNET_BASE_NUMBER_TYPE eta);//学習
+NeuralNet* NeuralNet_Set_BatchSize(NeuralNet* this, const unsigned int size);
+
