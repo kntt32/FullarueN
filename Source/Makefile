@@ -1,8 +1,8 @@
 build: main.o neuralnet.o
 ifeq ($(OS), Windows_NT)
-	gcc  $^ libFlexirtaM.so -lm -Wall -Wextra -O2
+	gcc  $^ libFlexirtaM.so -lm -Wall -Wextra -Ofast
 else
-	gcc  $^ -lFlexirtaM -lm -Wall -Wextra -O2
+	gcc  $^ -lFlexirtaM -lm -Wall -Wextra -Ofast
 endif
 
 install: libFullarueN.so
@@ -27,7 +27,7 @@ else
 endif
 
 %.o: %.c
-	gcc -I include -c -Wall -Wextra $<
+	gcc -I include -c -Wall -Wextra -Ofast $<
 
 clean:
 ifeq ($(OS), Windows_NT)
