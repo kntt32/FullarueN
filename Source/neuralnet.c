@@ -371,11 +371,11 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
     unsigned int* learningOrder = malloc(sizeof(unsigned int) * this->batchSize);
 
     for(unsigned int epochTime = 0; epochTime < times; epochTime++) {
-        NeuralNet_Shuffle(learningOrder, this->batchSize);
-        for(unsigned int timesInEpoch = 0; timesInEpoch < (this->learningTarget.count + this->batchSize)/this->batchSize; timesInEpoch++) {
+        NeuralNet_Shuffle(learningOrder, this->learningTarget.count);
+        for(unsigned int timesInEpoch = 0; timesInEpoch < this->learningTarget.count/this->batchSize; timesInEpoch++) {
             //勾配を計算
             NeuralNet_Reset_Gradiant(this);
-            for(unsigned int i=0; (timesInEpoch != ((this->learningTarget.count + this->batchSize)/this->batchSize)-1)?(i < this->batchSize):(i < this->learningTarget.count % this->batchSize); i++) {
+            for(unsigned int i=0; i<this->batchSize; i++) {
                 NeuralNet_Set_Delta(this, learningOrder[i+timesInEpoch*this->batchSize]);
                 NeuralNet_Set_Gradiant(this);
             }

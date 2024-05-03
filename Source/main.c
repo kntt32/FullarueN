@@ -57,8 +57,8 @@ int main() {
     static NEURALNET_BASE_NUMBER_TYPE learningInputs[5*100] = {1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0, 0,0,0,0,1};
     static NEURALNET_BASE_NUMBER_TYPE learningTarget[5*100] = {0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0, 0,0,0,0,1, 1,0,0,0,0};
 
-    static const unsigned int datacount = 30;
-
+    static const unsigned int datacount = 5;
+/*
     for(unsigned int i=0; i<datacount; i++) {
         for(unsigned int k=0; k<5; k++) {
             learningInputs[i*5+k] = ((i%((unsigned int)pow(2,5-k))) - (i%((unsigned int)pow(2,4-k)))) ? (1):(0);
@@ -66,12 +66,13 @@ int main() {
             printf("%f, ", learningTarget[i*5+k]);
         }
         printf("\n");
-    }
+    }*/
 
 
     NeuralNet* nnet = NeuralNet_New(5, 2, neuronNumber);
 
     NeuralNet_Set_LearningTarget(nnet, datacount, learningInputs, learningTarget);
+    NeuralNet_Set_BatchSize(nnet, 2);
     NeuralNet_Learn(nnet, 1000, 0.01);
 
     for(unsigned int i=0; i<datacount; i++) {
