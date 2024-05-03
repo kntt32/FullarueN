@@ -368,7 +368,7 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
 
     static const NEURALNET_BASE_NUMBER_TYPE eta2 = 0;
 
-    unsigned int* learningOrder = malloc(sizeof(unsigned int) * this->batchSize);
+    unsigned int* learningOrder = malloc(sizeof(unsigned int) * this->learningTarget.count);
 
     for(unsigned int epochTime = 0; epochTime < times; epochTime++) {
         NeuralNet_Shuffle(learningOrder, this->learningTarget.count);
