@@ -56,3 +56,5 @@ NeuralNet* NeuralNet_Set_Gradiant(NeuralNet* this);//勾配を加算
 NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEURALNET_BASE_NUMBER_TYPE eta);//学習
 NeuralNet* NeuralNet_Set_BatchSize(NeuralNet* this, const unsigned int size);
 
+unsigned long long NeuralNet_RandInt();//乱数
+unsigned int* NeuralNet_Shuffle(unsigned int* buff, const unsigned size);//シャッフル

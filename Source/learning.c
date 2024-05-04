@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <stdbool.h>
-#include <time.h>
+
+#if NEURALNET_ENABLE_WINAPI
+#include <windows.h>
+#elif NEURALNET_ENABLE_PTHREAD
+#include <pthread.h>
+#endif
 
 #include <FlexirtaM_Build.h>
 #include "FullarueN_Build.h"
-
-unsigned long long NeuralNet_RandInt();
-unsigned int* NeuralNet_Shuffle(unsigned int* buff, const unsigned size);
 
 NeuralNet* NeuralNet_Set_LearningTarget(NeuralNet* this, const unsigned int count, const NEURALNET_BASE_NUMBER_TYPE inputs[count*this->inputSize], const NEURALNET_BASE_NUMBER_TYPE target[count*this->outputSize]) {
     if(this == NULL || inputs == NULL || target == NULL) return NULL;
@@ -150,39 +151,6 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
 
     free(learningOrder);
     learningOrder = NULL;
-/*
-    if(this->batchSize == 0) {
-        for(unsigned int learningTimes=0; learningTimes<times; learningTimes++) {
-            //勾配を計算
-            NeuralNet_Reset_Gradiant(this);
-            for(unsigned int i=0; i<this->learningTarget.count; i++) {
-                NeuralNet_Set_Delta(this, i);
-                NeuralNet_Set_Gradiant(this);
-            }
-
-            //重みを変更
-            {const unsigned int i=0;
-                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->inputSize; k++) {
-                    this->neuralNet[i].weight.data[k] -= eta * (this->neuralNet[i].gradiantOfWeight[k] + eta2*this->neuralNet[i].weight.data[k]);
-                }
-            }
-
-            for(unsigned int i=1; i<this->layerNumber; i++) {
-                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber*this->neuralNet[i-1].neuronNumber; k++) {
-                    this->neuralNet[i].weight.data[k] -= eta * (this->neuralNet[i].gradiantOfWeight[k] + eta2*this->neuralNet[i].weight.data[k]);
-                }
-            }
-            //バイアスを変更
-            for(unsigned int i=0; i<this->layerNumber; i++) {
-                for(unsigned int k=0; k<this->neuralNet[i].neuronNumber; k++) {
-                    this->neuralNet[i].bias.data[k] -= eta * (this->neuralNet[i].gradiantOfBias[k] + eta2*this->neuralNet[i].bias.data[k]);
-                }
-            }
-        }
-    }else {
-
-    }
-*/
     return this;
 }
 
