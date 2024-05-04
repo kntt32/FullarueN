@@ -1,4 +1,4 @@
-build: main.o neuralnet.o
+build: main.o neuralnet.o learning.o utils.o
 ifeq ($(OS), Windows_NT)
 	gcc  $^ libFlexirtaM.so -lm -Wall -Wextra -Ofast
 else
@@ -18,8 +18,10 @@ debug: main.c neuralnet.c
 
 main.o: main.c FullarueN_Build.h
 neuralnet.o: neuralnet.c FullarueN_Build.h
+learning.o: learning.c FullarueN_Build.h
+utils.o: utils.c FullarueN_Build.h
 
-libFullarueN.so: neuralnet.o
+libFullarueN.so: neuralnet.o learning.o utils.o
 ifeq ($(OS), Windows_NT)
 	gcc -o libFullarueN.so $^ libFlexirtaM.so -shared -fPIC
 else
