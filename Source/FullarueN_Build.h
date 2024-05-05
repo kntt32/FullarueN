@@ -6,8 +6,8 @@
     //BASE_NUMBER_TYPE型の変換演算子
 #define NEURALNET_ENABLE_RDRAND 1
     //x64RdRand命令を使用
-#define NEURALNET_ENABLE_PTHREAD 1
-    //pthreadを許可
+#define NEURALNET_ENABLE_POSIX 1
+    //posixを許可
 #define NEURALNET_ENABLE_WINAPI 0
     //Win32APIを許可する
 

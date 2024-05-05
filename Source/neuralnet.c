@@ -19,6 +19,12 @@ typedef struct {
     NEURALNET_BASE_NUMBER_TYPE* deltaOfWeight;//[w:neuronNumber] 重みの誤差
     NEURALNET_BASE_NUMBER_TYPE* gradiantOfWeight;//[w:neuronNumber h:neuronNumber_-1] 重みの勾配
     NEURALNET_BASE_NUMBER_TYPE* gradiantOfBias;//[w:neuronNumber h:1] バイアスの勾配
+
+#if NEURALNET_ENABLE_WINAPI
+        pthread_mutex_t mutex;
+#elif NEURALNET_ENABLE_POSIX
+        pthread_mutex_t mutex;
+#endif
 } Dummy_neuralNet;//ニューラルネットワークのダミー
 struct {
     unsigned int count;//学習データの個数
@@ -75,6 +81,48 @@ NeuralNet* NeuralNet_New(const unsigned int inputSize, const unsigned int layerN
     return NeuralNet_Constructer(malloc(sizeof(NeuralNet)), inputSize, layerNum, neuronNumbers);
 }
 
+NeuralNet* NeuralNet_NewAndCopy(const NeuralNet* from) {
+    NeuralNet* this = malloc(sizeof(NeuralNet));
+    this->layerNumber = from->layerNumber;
+    this->batchSize = from->batchSize;
+    this->inputSize = from->inputSize;
+    Matrix_Method(Constructer)(&(this->input), 0, 0);
+    Matrix_Method(Copy)(&(this->input), &(from->input));
+    this->outputSize = from->outputSize;
+    Matrix_Method(Constructer)(&(this->output), 0, 0);
+    Matrix_Method(Copy)(&(this->output), &(from->output));
+
+    this->neuralNet = malloc(sizeof(Dummy_neuralNet)*from->layerNumber);
+
+    for(unsigned int i=0; i<from->layerNumber; i++) {
+        this->neuralNet[i].neuronNumber = from->neuralNet[i].neuronNumber;
+        Matrix_Method(Constructer)(&(this->neuralNet[i].weight), 0, 0);
+        Matrix_Method(Copy)(&(this->neuralNet[i].weight), &(from->neuralNet[i].weight));
+        Matrix_Method(Constructer)(&(this->neuralNet[i].bias), 0, 0);
+        Matrix_Method(Copy)(&(this->neuralNet[i].bias), &(from->neuralNet[i].bias));
+        Matrix_Method(Constructer)(&(this->neuralNet[i].u), 0, 0);
+        Matrix_Method(Copy)(&(this->neuralNet[i].u), &(from->neuralNet[i].u));
+        Matrix_Method(Constructer)(&(this->neuralNet[i].y), 0, 0);
+        Matrix_Method(Copy)(&(this->neuralNet[i].y), &(from->neuralNet[i].y));
+        this->neuralNet[i].deltaOfWeight = malloc(sizeof(NEURALNET_BASE_NUMBER_TYPE)*this->neuralNet[i].neuronNumber);
+
+        this->neuralNet[i].gradiantOfWeight = malloc(sizeof(NEURALNET_BASE_NUMBER_TYPE)*this->neuralNet[i].neuronNumber*((i != 0)?(this->neuralNet[i-1].neuronNumber):(this->inputSize)));
+        this->neuralNet[i].gradiantOfBias = malloc(sizeof(NEURALNET_BASE_NUMBER_TYPE)*this->neuralNet[i].neuronNumber);
+    }
+    this->learningTarget.count = from->learningTarget.count;
+    this->learningTarget.inputs = malloc(sizeof(NEURALNET_BASE_NUMBER_TYPE)*this->learningTarget.count*this->inputSize);
+    this->learningTarget.target = malloc(sizeof(NEURALNET_BASE_NUMBER_TYPE)*this->learningTarget.count*this->outputSize);
+    for(unsigned int i=0; i<this->learningTarget.count; i++) {
+        for(unsigned int k=0; k<this->inputSize; k++) {
+            this->learningTarget.inputs[i*this->inputSize+k] = from->learningTarget.inputs[i*this->inputSize+k];
+        }
+        for(unsigned int k=0; k<this->outputSize; k++) {
+            this->learningTarget.target[i*this->outputSize+k] = from->learningTarget.target[i*this->outputSize+k];
+        }
+    }
+
+    return this;
+}
 
 NeuralNet* NeuralNet_Destructer(NeuralNet* this) {
     if(this == NULL) return NULL;

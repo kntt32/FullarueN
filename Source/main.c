@@ -53,7 +53,7 @@ int main() {
     NeuralNet_Delete(nnet);
 
 #else
-    static const unsigned int neuronNumber[2] = {100,5};
+    static const unsigned int neuronNumber[2] = {10,5};
     static NEURALNET_BASE_NUMBER_TYPE learningInputs[5*100] = {1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0, 0,0,0,0,1};
     static NEURALNET_BASE_NUMBER_TYPE learningTarget[5*100] = {0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0, 0,0,0,0,1, 1,0,0,0,0};
 
