@@ -1,16 +1,15 @@
-#include <FlexirtaM_Build.h>
-#include "FullarueN_Build.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 
 #if NEURALNET_ENABLE_WINAPI
 #include <windows.h>
-#elif NEURALNET_ENABLE_POSIX
+#elif NEURALNET_ENABLE_PTHREAD
 #include <pthread.h>
 #endif
+
+#include <FlexirtaM_Build.h>
+#include "FullarueN_Build.h"
 
 NeuralNet* NeuralNet_Set_LearningTarget(NeuralNet* this, const unsigned int count, const NEURALNET_BASE_NUMBER_TYPE inputs[count*this->inputSize], const NEURALNET_BASE_NUMBER_TYPE target[count*this->outputSize]) {
     if(this == NULL || inputs == NULL || target == NULL) return NULL;
@@ -112,97 +111,22 @@ NeuralNet* NeuralNet_Set_Gradiant(NeuralNet* this) {
     return this;
 }
 
-#if NEURALNET_ENABLE_POSIX
-void* NeuralNet_Learn_MultiThread_CalcGrad(void* arg) {
-    const struct {
-        NeuralNet* target;
-        const unsigned int* learningOrder;
-        unsigned int IndexInOrder;
-        unsigned int CountOfLearn;
-    }* argInputs = arg;
-
-    NeuralNet* target = argInputs->target;
-    NeuralNet* this = NeuralNet_NewAndCopy(argInputs->target);
-    
-    NeuralNet_Reset_Gradiant(this);
-    for(unsigned int i=argInputs->IndexInOrder; i<argInputs->IndexInOrder+argInputs->CountOfLearn; i++) {
-        NeuralNet_Set_Delta(this, argInputs->learningOrder[i]);
-        NeuralNet_Set_Gradiant(this);
-    }
-    //[w:neuronNumber h:neuronNumber_-1]
-    for(unsigned int i=0; i<this->layerNumber; i++) {
-        pthread_mutex_lock(&(this->neuralNet[i].mutex));
-
-        unsigned int temptimes = 0;
-        if(i==0) {
-            temptimes = this->neuralNet[i].neuronNumber*this->inputSize;
-        }else {
-            temptimes = this->neuralNet[i].neuronNumber*this->neuralNet[i-1].neuronNumber;
-        }
-        for(unsigned int k=0; k<temptimes; k++) {
-            target->neuralNet[i].gradiantOfWeight[k] = this->neuralNet[i].gradiantOfWeight[k];
-        }
-        temptimes = this->neuralNet[i].neuronNumber;
-        for(unsigned int k=0; k<temptimes; k++) {
-            target->neuralNet[i].gradiantOfBias[k] = this->neuralNet[i].gradiantOfBias[k];
-        }
-
-        pthread_mutex_unlock(&(this->neuralNet[i].mutex));
-    }
-    
-    NeuralNet_Delete(this);
-    return NULL;
-}
-#endif
-
 NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEURALNET_BASE_NUMBER_TYPE eta) {
     if(this == NULL) return NULL;
 
     static const NEURALNET_BASE_NUMBER_TYPE eta2 = 0;
-    static const unsigned int multithread_countoflearn = 100;
 
     unsigned int* learningOrder = malloc(sizeof(unsigned int) * this->learningTarget.count);
-
-#if NEURALNET_ENABLE_POSIX
-    pthread_t* threadHandle_CalcGrad = malloc(sizeof(pthread_t)*this->batchSize);
-    struct {
-        NeuralNet* target;
-        unsigned int* learningOrder;
-        unsigned int IndexInOrder;
-        unsigned int CountOfLearn;
-    }* threadArg_CalcGrad = malloc(sizeof(struct {
-        NeuralNet* target;
-        unsigned int* learningOrder;
-        unsigned int IndexInOrder;
-        unsigned int CountOfLearn;
-    }*)*this->batchSize);
-#endif
 
     for(unsigned int epochTime = 0; epochTime < times; epochTime++) {
         NeuralNet_Shuffle(learningOrder, this->learningTarget.count);
         for(unsigned int timesInEpoch = 0; timesInEpoch < this->learningTarget.count/this->batchSize; timesInEpoch++) {
             //勾配を計算
             NeuralNet_Reset_Gradiant(this);
-#if NEURALNET_ENABLE_POSIX
-            for(unsigned int i=0; i<(this->batchSize+multithread_countoflearn-1)/multithread_countoflearn; i++) {
-                threadArg_CalcGrad[i].target = this;
-                threadArg_CalcGrad[i].learningOrder = learningOrder;
-                threadArg_CalcGrad[i].IndexInOrder = (i+timesInEpoch*this->batchSize)*multithread_countoflearn;
-                if(i+1 == (this->batchSize+multithread_countoflearn-1)/multithread_countoflearn)
-                    threadArg_CalcGrad[i].CountOfLearn = this->batchSize % multithread_countoflearn;
-                else
-                    threadArg_CalcGrad[i].CountOfLearn = multithread_countoflearn;
-                pthread_create(threadHandle_CalcGrad+i, NULL, NeuralNet_Learn_MultiThread_CalcGrad, threadArg_CalcGrad+i);
-            }
-            for(unsigned int i=0; i<(this->batchSize+multithread_countoflearn-1)/multithread_countoflearn; i++) {
-                pthread_join(*(threadHandle_CalcGrad+i), NULL);
-            }
-#else
             for(unsigned int i=0; i<this->batchSize; i++) {
                 NeuralNet_Set_Delta(this, learningOrder[i+timesInEpoch*this->batchSize]);
                 NeuralNet_Set_Gradiant(this);
             }
-#endif
 
             //重みを更新
             {const unsigned int targetLayerIndex = 0;
@@ -224,13 +148,6 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
             }
         }
     }
-
-#if NEURALNET_ENABLE_POSIX
-    free(threadHandle_CalcGrad);
-    threadHandle_CalcGrad = NULL;
-    free(threadArg_CalcGrad);
-    threadArg_CalcGrad = NULL;
-#endif
 
     free(learningOrder);
     learningOrder = NULL;

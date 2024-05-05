@@ -1,11 +1,5 @@
 #pragma once
 
-#if NEURALNET_ENABLE_WINAPI
-#include <windows.h>
-#elif NEURALNET_ENABLE_POSIX
-#include <pthread.h>
-#endif
-
 /************************************************************
 　活性化関数: 隠れ層: ReLU関数
 　　　　　　  出力層: ソフトマックス(シグモイド)関数
@@ -32,12 +26,6 @@ typedef struct {
         NEURALNET_BASE_NUMBER_TYPE* deltaOfWeight;//[w:neuronNumber] 重みの誤差
         NEURALNET_BASE_NUMBER_TYPE* gradiantOfWeight;//[w:neuronNumber h:neuronNumber_-1] 重みの勾配
         NEURALNET_BASE_NUMBER_TYPE* gradiantOfBias;//[w:neuronNumber h:1] バイアスの勾配
-
-#if NEURALNET_ENABLE_WINAPI
-        pthread_mutex_t mutex;
-#elif NEURALNET_ENABLE_POSIX
-        pthread_mutex_t mutex;
-#endif
     }* neuralNet;//[layerNumber] ニューラルネットワーク
     
     struct {
@@ -49,7 +37,6 @@ typedef struct {
 
 NeuralNet* NeuralNet_Constructer(NeuralNet* this, const unsigned int inputSize, const unsigned int layerNum, const unsigned int neuronNumbers[layerNum]);//コンストラクタ 重みとバイアスは-1以上1以下でランダムにセットされる
 NeuralNet* NeuralNet_New(const unsigned int inputSize, const unsigned int layerNum, const unsigned int neuronNumbers[layerNum]);//オブジェクト生成
-NeuralNet* NeuralNet_NewAndCopy(const NeuralNet* from);
 NeuralNet* NeuralNet_Destructer(NeuralNet* this);//デストラクタ
 NeuralNet* NeuralNet_Delete(NeuralNet* this);//オブジェクトを破棄
 
