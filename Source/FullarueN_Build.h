@@ -8,7 +8,5 @@
     //x64RdRand命令を使用
 #define NEURALNET_ENABLE_PTHREAD 1
     //pthreadを許可
-#define NEURALNET_ENABLE_WINAPI 0
-    //Win32APIを許可する
 
 #include <FullarueN.h>
