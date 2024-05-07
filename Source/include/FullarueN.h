@@ -32,6 +32,9 @@ typedef struct {
         unsigned int count;//学習データの個数
         NEURALNET_BASE_NUMBER_TYPE* inputs;//[h:count w:neuralNet[0].neuronNumber] 入力
         NEURALNET_BASE_NUMBER_TYPE* target;//[h:count w:neuralNet[layerNumber-1].neuronNumber] 出力
+        
+        unsigned int batchSize;//バッチサイズ
+        NEURALNET_BASE_NUMBER_TYPE eta;//学習率
     } learningTarget;//学習データ
 } NeuralNet;
 
@@ -53,8 +56,9 @@ NeuralNet* NeuralNet_Print_Gradiant(NeuralNet* this);//勾配を表示
 NeuralNet* NeuralNet_Set_Delta(NeuralNet* this, const unsigned int learningIndex);//delta(誤差)をセット
 NeuralNet* NeuralNet_Reset_Gradiant(NeuralNet* this);//勾配をリセット
 NeuralNet* NeuralNet_Set_Gradiant(NeuralNet* this);//勾配を加算
-NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEURALNET_BASE_NUMBER_TYPE eta);//学習
-NeuralNet* NeuralNet_Set_BatchSize(NeuralNet* this, const unsigned int size);
+NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times);//学習
+NeuralNet* NeuralNet_Set_BatchSize(NeuralNet* this, const unsigned int size);//バッチサイズをセット
+NeuralNet* NeuralNet_Set_Eta(NeuralNet* this, const NEURALNET_BASE_NUMBER_TYPE eta);//学習率をセット
 
 unsigned long long NeuralNet_RandInt();//乱数
 unsigned int* NeuralNet_Shuffle(unsigned int* buff, const unsigned size);//シャッフル

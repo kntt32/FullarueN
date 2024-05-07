@@ -16,7 +16,7 @@ NeuralNet* NeuralNet_Set_LearningTarget(NeuralNet* this, const unsigned int coun
 
     this->learningTarget.count = count;
 
-    this->batchSize = count;
+    this->learningTarget.batchSize = count;
 
     this->learningTarget.inputs = malloc(sizeof(NEURALNET_BASE_NUMBER_TYPE)*count*this->inputSize);
     for(unsigned int i=0; i<count*this->inputSize; i++) {
@@ -111,10 +111,12 @@ NeuralNet* NeuralNet_Set_Gradiant(NeuralNet* this) {
     return this;
 }
 
-NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEURALNET_BASE_NUMBER_TYPE eta) {
+NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times) {
     if(this == NULL) return NULL;
 
     static const NEURALNET_BASE_NUMBER_TYPE eta2 = 0;
+
+    const NEURALNET_BASE_NUMBER_TYPE eta = this->learningTarget.eta;
 
     unsigned int* learningOrder = malloc(sizeof(unsigned int) * this->learningTarget.count);
 
@@ -123,8 +125,8 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
         for(unsigned int timesInEpoch = 0; timesInEpoch < this->learningTarget.count/this->batchSize; timesInEpoch++) {
             //勾配を計算
             NeuralNet_Reset_Gradiant(this);
-            for(unsigned int i=0; i<this->batchSize; i++) {
-                NeuralNet_Set_Delta(this, learningOrder[i+timesInEpoch*this->batchSize]);
+            for(unsigned int i=0; i<this->learningTarget.batchSize; i++) {
+                NeuralNet_Set_Delta(this, learningOrder[i+timesInEpoch*this->learningTarget.batchSize]);
                 NeuralNet_Set_Gradiant(this);
             }
 
@@ -157,8 +159,15 @@ NeuralNet* NeuralNet_Learn(NeuralNet* this, const unsigned int times, const NEUR
 NeuralNet* NeuralNet_Set_BatchSize(NeuralNet* this, const unsigned int size) {
     if(this == NULL) return NULL;
 
-    this->batchSize = size;
+    this->learningTarget.batchSize = size;
 
     return this;
 }
 
+NeuralNet* NeuralNet_Set_Eta(NeuralNet* this, const NEURALNET_BASE_NUMBER_TYPE eta) {
+    if(this == NULL) return NULL;
+
+    this->learningTarget.batchSize = eta;
+    
+    return this;
+}
