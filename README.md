@@ -1,4 +1,6 @@
-# FullarueN (NeuralNet)
+[`SurarueN`](https://github.com/kntt32/SurarueN/tree/main)へ移行済み  
+
+# FullarueN (NeuralNet)  
 自作の分類問題向け機械学習ライブラリである  
 単純なニューラルネットワークを利用した機械学習ができる  
 
